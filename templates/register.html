@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Register — EWaste College{% endblock %}
+{% block wrapper_class %}class="container-md"{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+  <h2>Create Account</h2>
+  <p class="sub">Register to submit your e-waste pickup requests</p>
+
+  <form action="{{ url_for('register') }}" method="POST">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Full Name *</label>
+        <input type="text" name="name" placeholder="Your full name" required>
+      </div>
+      <div class="form-group">
+        <label>Email Address *</label>
+        <input type="email" name="email" placeholder="you@college.edu" required>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Phone Number *</label>
+        <input type="tel" name="phone" placeholder="+91 XXXXX XXXXX" required>
+      </div>
+      <div class="form-group">
+        <label>Department</label>
+        <input type="text" name="department" placeholder="e.g. Computer Science">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Year / Class</label>
+        <select name="class_year">
+          <option value="">Select year</option>
+          <option>FY (First Year)</option>
+          <option>SY (Second Year)</option>
+          <option>TY (Third Year)</option>
+          <option>Final Year</option>
+          <option>PG / Masters</option>
+          <option>Faculty</option>
+          <option>Staff</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Roll No / Employee ID</label>
+        <input type="text" name="roll_no" placeholder="e.g. CS2021001">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Location in College</label>
+      <input type="text" name="college_location" placeholder="e.g. Hostel Block B, Room 204">
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Password *</label>
+        <input type="password" name="password" placeholder="Min 6 characters" required>
+      </div>
+      <div class="form-group">
+        <label>Confirm Password *</label>
+        <input type="password" name="confirm_password" placeholder="Re-enter password" required>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-full" style="margin-top:.5rem">Create Account →</button>
+  </form>
+
+  <p style="margin-top:1.2rem;text-align:center;font-size:.875rem;color:var(--muted)">
+    Already have an account? <a href="{{ url_for('login') }}">Login here</a>
+  </p>
+</div>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Request Pickup — EWaste College{% endblock %}
+{% block wrapper_class %}class="container-md"{% endblock %}
+
+{% block content %}
+<div class="form-card">
+  <h2>🚚 Request Pickup</h2>
+  <p class="sub">Schedule a pickup for your registered e-waste item.</p>
+
+  {% if items %}
+  <form action="{{ url_for('request_pickup') }}" method="POST">
+    <div class="form-group">
+      <label>Select E-Waste Item *</label>
+      <select name="waste_id" required>
+        <option value="">— Choose an item —</option>
+        {% for item in items %}
+        <option value="{{ item.waste_id }}">{{ item.item_name }} — {{ item.category }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Pickup Location *</label>
+      <input type="text" name="pickup_location"
+             placeholder="e.g. Hostel Block B Room 204 / Main Gate / Library Entrance" required>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Preferred Pickup Date *</label>
+        <input type="date" name="pickup_date" required>
+      </div>
+      <div class="form-group">
+        <label>Preferred Time Slot</label>
+        <select name="time_slot">
+          <option value="">Any time</option>
+          <option>Morning (8 AM – 10 AM)</option>
+          <option>Late Morning (10 AM – 12 PM)</option>
+          <option>Afternoon (12 PM – 2 PM)</option>
+          <option>Late Afternoon (2 PM – 4 PM)</option>
+          <option>Evening (4 PM – 6 PM)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Additional Note</label>
+      <textarea name="note" placeholder="Any special instructions for the pickup volunteer…"></textarea>
+    </div>
+
+    <div style="display:flex;gap:.75rem;margin-top:.5rem">
+      <button type="submit" class="btn btn-primary">Send Request</button>
+      <a href="{{ url_for('dashboard') }}" class="btn btn-outline">Cancel</a>
+    </div>
+  </form>
+
+  {% else %}
+  <div class="empty" style="padding:1.5rem 0">
+    <div class="icon">♻</div>
+    <p>You haven't added any e-waste items yet.<br>
+      <a href="{{ url_for('add_waste') }}">Add an item first</a>, then come back to request a pickup.
+    </p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

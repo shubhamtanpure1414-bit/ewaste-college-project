@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Login — EWaste College{% endblock %}
+{% block wrapper_class %}class="container-sm"{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+  <h2>Welcome Back</h2>
+  <p class="sub">Login to manage your e-waste pickup requests</p>
+
+  <form action="{{ url_for('login') }}" method="POST">
+    <div class="form-group">
+      <label>Email Address</label>
+      <input type="email" name="email" placeholder="you@college.edu" required>
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" name="password" placeholder="••••••••" required>
+    </div>
+    <button type="submit" class="btn btn-primary btn-full" style="margin-top:.4rem">Login →</button>
+  </form>
+
+  <p style="margin-top:1.2rem;text-align:center;font-size:.875rem;color:var(--muted)">
+    No account? <a href="{{ url_for('register') }}">Register here</a>
+    &nbsp;·&nbsp; <a href="{{ url_for('admin_login') }}">Admin Login</a>
+  </p>
+</div>
+{% endblock %}

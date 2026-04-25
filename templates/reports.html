@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Reports — EWaste College{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1>📊 Collection Reports</h1>
+    <p class="sub">Overview of e-waste collected across campus.</p>
+  </div>
+  <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline">← Back to Dashboard</a>
+</div>
+
+<!-- Summary Stats -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="num">{{ total_users }}</div>
+    <div class="label">Registered Users</div>
+  </div>
+  <div class="stat-card blue">
+    <div class="num">{{ total_items }}</div>
+    <div class="label">E-Waste Items Logged</div>
+  </div>
+  <div class="stat-card amber">
+    <div class="num">{{ total_pending }}</div>
+    <div class="label">Pending Requests</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">{{ total_completed }}</div>
+    <div class="label">Completed Pickups</div>
+  </div>
+  <div class="stat-card red">
+    <div class="num">{{ total_cancelled }}</div>
+    <div class="label">Cancelled Requests</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;flex-wrap:wrap" class="report-grid">
+
+  <!-- Category-wise -->
+  <div class="table-card" style="padding:1.5rem">
+    <h3 style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:1.2rem">
+      📦 Category-wise E-Waste
+    </h3>
+    {% if category_stats %}
+    {% set max_qty = category_stats[0].total_qty %}
+    <table class="report-table">
+      <thead>
+        <tr><th>Category</th><th>Items</th><th>Total Qty</th><th>Share</th></tr>
+      </thead>
+      <tbody>
+        {% for c in category_stats %}
+        <tr>
+          <td>{{ c.category }}</td>
+          <td>{{ c.count }}</td>
+          <td>{{ c.total_qty }}</td>
+          <td style="min-width:100px">
+            <div class="bar-wrap">
+              <div class="bar-fill" style="width:{{ ((c.total_qty / max_qty) * 100)|int }}%"></div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty"><p>No data yet.</p></div>
+    {% endif %}
+  </div>
+
+  <!-- Monthly -->
+  <div class="table-card" style="padding:1.5rem">
+    <h3 style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:1.2rem">
+      📅 Monthly Completed Pickups
+    </h3>
+    {% if monthly %}
+    <table class="report-table">
+      <thead>
+        <tr><th>Month</th><th>Completed</th></tr>
+      </thead>
+      <tbody>
+        {% for m in monthly %}
+        <tr>
+          <td>{{ m.month }}</td>
+          <td><strong>{{ m.count }}</strong></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty"><p>No completed pickups yet.</p></div>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock %}

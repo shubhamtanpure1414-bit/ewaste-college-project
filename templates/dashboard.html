@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}My Dashboard — EWaste College{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1>My Dashboard</h1>
+    <p class="sub">Hello, {{ session.user_name }}! Track and manage your e-waste pickups.</p>
+  </div>
+  <div class="actions">
+    <a href="{{ url_for('add_waste') }}" class="btn btn-primary">+ Add E-Waste</a>
+    <a href="{{ url_for('request_pickup') }}" class="btn btn-outline">🚚 Request Pickup</a>
+  </div>
+</div>
+
+<!-- ── Stats ── -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="num">{{ active|length }}</div>
+    <div class="label">Active Requests</div>
+  </div>
+  <div class="stat-card amber">
+    <div class="num">{{ history|length }}</div>
+    <div class="label">Completed Pickups</div>
+  </div>
+</div>
+
+<!-- ── Active Requests ── -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-title st-pending">📋 Active Pickup Requests</span>
+    <span class="count-pill">{{ active|length }}</span>
+  </div>
+
+  {% if active %}
+  <div class="table-card">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Item</th>
+            <th>Category</th>
+            <th>Qty</th>
+            <th>Pickup Location</th>
+            <th>Date</th>
+            <th>Time Slot</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in active %}
+          <tr>
+            <td data-label="#">{{ r.request_id }}</td>
+            <td data-label="Item"><strong>{{ r.item_name }}</strong></td>
+            <td data-label="Category">{{ r.category }}</td>
+            <td data-label="Qty">{{ r.quantity }}</td>
+            <td data-label="Location">{{ r.pickup_location }}</td>
+            <td data-label="Date">{{ r.pickup_date }}</td>
+            <td data-label="Time">{{ r.time_slot or '—' }}</td>
+            <td data-label="Status">
+              {% if r.status == 'Pending' %}
+                <span class="badge badge-pending">Pending</span>
+              {% elif r.status == 'Assigned' %}
+                <span class="badge badge-assigned">Assigned</span>
+              {% elif r.status == 'Picked Up' %}
+                <span class="badge badge-pickedup">Picked Up</span>
+              {% elif r.status == 'Sent To Recycling' %}
+                <span class="badge badge-recycling">Sent To Recycling</span>
+              {% else %}
+                <span class="badge">{{ r.status }}</span>
+              {% endif %}
+            </td>
+            <td data-label="Action">
+              {% if r.status == 'Pending' %}
+              <form action="{{ url_for('cancel_request', request_id=r.request_id) }}" method="POST"
+                    onsubmit="return confirm('Cancel this request?')">
+                <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
+              </form>
+              {% else %}
+                <span style="color:var(--muted);font-size:.8rem">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="table-card">
+    <div class="empty">
+      <div class="icon">🚚</div>
+      <p>No active requests. <a href="{{ url_for('request_pickup') }}">Request a pickup</a>.</p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ── Pickup History ── -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-title st-completed">✅ Pickup History</span>
+    <span class="count-pill">{{ history|length }}</span>
+  </div>
+
+  {% if history %}
+  <div class="table-card">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Category</th>
+            <th>Qty</th>
+            <th>Pickup Date</th>
+            <th>Completed At</th>
+            <th>Remark</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in history %}
+          <tr>
+            <td data-label="Item"><strong>{{ h.item_name }}</strong></td>
+            <td data-label="Category">{{ h.category }}</td>
+            <td data-label="Qty">{{ h.quantity }}</td>
+            <td data-label="Pickup Date">{{ h.pickup_date }}</td>
+            <td data-label="Completed At">
+              {{ h.completed_at.strftime('%d %b %Y, %I:%M %p') if h.completed_at else '—' }}
+            </td>
+            <td data-label="Remark">
+              <span class="pickup-note">✔ Waste picked up successfully</span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="table-card">
+    <div class="empty">
+      <div class="icon">📅</div>
+      <p>No completed pickups yet.</p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

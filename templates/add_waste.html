@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Add E-Waste — EWaste College{% endblock %}
+{% block wrapper_class %}class="container-md"{% endblock %}
+
+{% block content %}
+<div class="form-card">
+  <h2>♻ Add E-Waste Item</h2>
+  <p class="sub">Register your electronic item before requesting a pickup.</p>
+
+  <form action="{{ url_for('add_waste') }}" method="POST">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Item Name *</label>
+        <input type="text" name="item_name" placeholder="e.g. Dell Laptop, iPhone 8" required>
+      </div>
+      <div class="form-group">
+        <label>Category *</label>
+        <select name="category" required>
+          <option value="">Select category</option>
+          <option>Mobile</option>
+          <option>Laptop</option>
+          <option>Charger</option>
+          <option>Battery</option>
+          <option>Keyboard</option>
+          <option>Mouse</option>
+          <option>Monitor</option>
+          <option>Printer</option>
+          <option>Cable</option>
+          <option>Other</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Quantity *</label>
+        <input type="number" name="quantity" min="1" value="1" required>
+      </div>
+      <div class="form-group">
+        <label>Condition</label>
+        <select name="waste_condition">
+          <option value="">Select condition</option>
+          <option>Working</option>
+          <option>Not Working</option>
+          <option>Partially Working</option>
+          <option>Damaged / Broken</option>
+          <option>For Parts Only</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Approximate Weight (kg)</label>
+        <input type="number" name="approx_weight" step="0.01" min="0" placeholder="e.g. 2.5">
+      </div>
+      <div class="form-group" style="grid-column: span 1">
+        <!-- spacer -->
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Description (Optional)</label>
+      <textarea name="description" placeholder="Any extra details about the item — model, serial number, issues, etc."></textarea>
+    </div>
+
+    <div style="display:flex;gap:.75rem;margin-top:.5rem">
+      <button type="submit" class="btn btn-primary">Save Item</button>
+      <a href="{{ url_for('dashboard') }}" class="btn btn-outline">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

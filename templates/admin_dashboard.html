@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — EWaste College{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1>Admin Dashboard <span class="admin-chip">ADMIN</span></h1>
+    <p class="sub">Manage all pickup requests, assign collectors, and update statuses.</p>
+  </div>
+  <div class="actions">
+    <a href="{{ url_for('reports') }}" class="btn btn-outline">📊 Reports</a>
+    <a href="{{ url_for('admin_logout') }}" class="btn btn-danger btn-sm">Logout</a>
+  </div>
+</div>
+
+<!-- Stats bar -->
+<div class="stats-grid">
+  <div class="stat-card amber">
+    <div class="num">{{ pending|length }}</div>
+    <div class="label">Pending</div>
+  </div>
+  <div class="stat-card blue">
+    <div class="num">{{ assigned|length }}</div>
+    <div class="label">Assigned</div>
+  </div>
+  <div class="stat-card purple" style="--purple:#7c3aed">
+    <div class="num">{{ picked_up|length }}</div>
+    <div class="label">Picked Up</div>
+  </div>
+  <div class="stat-card" style="border-color:#d97706">
+    <div class="num">{{ recycling|length }}</div>
+    <div class="label">In Recycling</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">{{ completed|length }}</div>
+    <div class="label">Completed</div>
+  </div>
+  <div class="stat-card red">
+    <div class="num">{{ cancelled|length }}</div>
+    <div class="label">Cancelled</div>
+  </div>
+</div>
+
+{% set sections = [
+  ('pending',   pending,   'st-pending',   '🕐', 'Pending Requests'),
+  ('assigned',  assigned,  'st-assigned',  '👤', 'Assigned Requests'),
+  ('pickedup',  picked_up, 'st-pickedup',  '📦', 'Picked Up'),
+  ('recycling', recycling, 'st-recycling', '♻',  'Sent To Recycling'),
+  ('completed', completed, 'st-completed', '✅', 'Completed Pickups'),
+  ('cancelled', cancelled, 'st-cancelled', '❌', 'Cancelled Requests'),
+] %}
+
+{% for sid, rows, cls, icon, label in sections %}
+<div class="section" id="{{ sid }}">
+  <div class="section-head">
+    <span class="section-title {{ cls }}">{{ icon }} {{ label }}</span>
+    <span class="count-pill">{{ rows|length }}</span>
+  </div>
+
+  {% if rows %}
+  <div class="table-card">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>User</th>
+            <th>Email / Phone</th>
+            <th>Dept / Roll No</th>
+            <th>Item</th>
+            <th>Category</th>
+            <th>Qty</th>
+            <th>Condition</th>
+            <th>Weight(kg)</th>
+            <th>Location</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Note</th>
+            <th>Status</th>
+            <th>Update Status</th>
+            {% if sid in ['pending','assigned'] %}<th>Assign Collector</th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td data-label="#">{{ r.request_id }}</td>
+            <td data-label="User"><strong>{{ r.name }}</strong></td>
+            <td data-label="Contact">{{ r.email }}<br><small>{{ r.phone }}</small></td>
+            <td data-label="Dept">{{ r.department or '—' }}<br><small>{{ r.roll_no or '—' }}</small></td>
+            <td data-label="Item"><strong>{{ r.item_name }}</strong></td>
+            <td data-label="Category">{{ r.category }}</td>
+            <td data-label="Qty">{{ r.quantity }}</td>
+            <td data-label="Condition">{{ r.waste_condition or '—' }}</td>
+            <td data-label="Weight">{{ r.approx_weight or '—' }}</td>
+            <td data-label="Location">{{ r.pickup_location }}</td>
+            <td data-label="Date">{{ r.pickup_date }}</td>
+            <td data-label="Time">{{ r.time_slot or '—' }}</td>
+            <td data-label="Note">{{ r.note or '—' }}</td>
+            <td data-label="Status">
+              {% if r.status == 'Pending' %}
+                <span class="badge badge-pending">Pending</span>
+              {% elif r.status == 'Assigned' %}
+                <span class="badge badge-assigned">Assigned</span>
+              {% elif r.status == 'Picked Up' %}
+                <span class="badge badge-pickedup">Picked Up</span>
+              {% elif r.status == 'Sent To Recycling' %}
+                <span class="badge badge-recycling">Sent To Recycling</span>
+              {% elif r.status == 'Completed' %}
+                <span class="badge badge-completed">Completed</span>
+              {% elif r.status == 'Cancelled' %}
+                <span class="badge badge-cancelled">Cancelled</span>
+              {% endif %}
+            </td>
+            <td data-label="Update">
+              <form action="{{ url_for('update_status', request_id=r.request_id) }}" method="POST" class="inline-form">
+                <select name="status">
+                  <option value="Pending"           {% if r.status=='Pending'           %}selected{% endif %}>Pending</option>
+                  <option value="Assigned"          {% if r.status=='Assigned'          %}selected{% endif %}>Assigned</option>
+                  <option value="Picked Up"         {% if r.status=='Picked Up'         %}selected{% endif %}>Picked Up</option>
+                  <option value="Sent To Recycling" {% if r.status=='Sent To Recycling' %}selected{% endif %}>Sent To Recycling</option>
+                  <option value="Completed"         {% if r.status=='Completed'         %}selected{% endif %}>Completed</option>
+                  <option value="Cancelled"         {% if r.status=='Cancelled'         %}selected{% endif %}>Cancelled</option>
+                </select>
+                <button type="submit" class="btn btn-primary btn-sm">Save</button>
+              </form>
+            </td>
+            {% if sid in ['pending','assigned'] %}
+            <td data-label="Collector">
+              <form action="{{ url_for('assign_collector', request_id=r.request_id) }}" method="POST" class="inline-form">
+                <input type="text" name="collector_name"
+                       value="{{ r.collector_name or '' }}"
+                       placeholder="Collector name" style="min-width:110px;padding:.32rem .65rem;font-size:.8rem">
+                <input type="text" name="collector_phone"
+                       value="{{ r.collector_phone or '' }}"
+                       placeholder="Phone" style="min-width:90px;padding:.32rem .65rem;font-size:.8rem">
+                <button type="submit" class="btn btn-dark btn-sm">Assign</button>
+              </form>
+            </td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="table-card">
+    <div class="empty">
+      <div class="icon">{{ icon }}</div>
+      <p>No {{ label|lower }} at this time.</p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endfor %}
+
+{% endblock %}
