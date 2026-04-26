@@ -114,7 +114,7 @@ def logout():
 @login_required
 def dashboard():
     uid = session["user_id"]
-    db = get_db(); cur = db.cursor(dictionary=True)
+    db = get_db(); cur = db.cursor()
 
     # Active = not Completed, not Cancelled
     cur.execute("""
