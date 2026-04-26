@@ -77,7 +77,7 @@ def register():
             db.commit()
             flash("Registration successful! Please login.", "success")
             return redirect(url_for("login"))
-        except mysql.connector.IntegrityError:
+       except psycopg2.IntegrityError:
             flash("Email already registered.", "error")
         finally:
             cur.close(); db.close()
@@ -91,7 +91,7 @@ def login():
         email    = request.form.get("email", "").strip()
         password = request.form.get("password", "")
 
-        db = get_db(); cur = db.cursor(dictionary=True)
+        db = get_db(); cur = db.cursor()
         cur.execute("SELECT * FROM users WHERE email=%s", (email,))
         user = cur.fetchone()
         cur.close(); db.close()
