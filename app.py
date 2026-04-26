@@ -406,6 +406,27 @@ def reports():
 
 from init_db import create_tables
 create_tables()  # This runs every time the app starts
+
+# TEMPORARY ROUTE - DELETE AFTER USE
+@app.route("/setup_admin")
+def setup_admin():
+    from werkzeug.security import generate_password_hash
+    db = get_db()
+    cur = db.cursor()
+    # This creates a fresh hash using YOUR server's local library
+    new_hash = generate_password_hash("admin123")
+    try:
+        # This will update the existing admin or create it if missing
+        cur.execute("UPDATE admin SET password=%s WHERE username='admin'", (new_hash,))
+        if cur.rowcount == 0:
+            cur.execute("INSERT INTO admin (username, password) VALUES ('admin', %s)", (new_hash,))
+        db.commit()
+        return "Success! Admin 'admin' password is now 'admin123'. Go to /admin_login now."
+    except Exception as e:
+        return f"Error: {e}"
+    finally:
+        cur.close()
+        db.close()
 # ─────────────────────────── RUN ───────────────────────────
 if __name__ == "__main__":
     app.run()
