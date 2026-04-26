@@ -13,8 +13,11 @@ app.secret_key = os.getenv("SECRET_KEY", "changeme_secret")
 
 # ─────────────────────────── DB ───────────────────────────
 def get_db():
+    db_url = os.environ.get("DATABASE_URL")
+    if not db_url:
+        raise ValueError("DATABASE_URL environment variable is not set!")
     return psycopg2.connect(
-        os.environ.get("DATABASE_URL"),
+        db_url,
         cursor_factory=psycopg2.extras.RealDictCursor
     )
 
