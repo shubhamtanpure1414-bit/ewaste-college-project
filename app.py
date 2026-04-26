@@ -8,11 +8,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "college_project_2026")
+app.secret_key = os.getenv("SECRET_KEY", "college_project_final_fix")
 
-# ─────────────────────────── DATABASE SETUP ───────────────────────────
+# ─────────────────────────── DATABASE ───────────────────────────
 
-def get_db_connection():
+def get_db():
     db_url = os.environ.get("DATABASE_URL")
     if db_url and db_url.startswith("postgres://"):
         db_url = db_url.replace("postgres://", "postgresql://", 1)
@@ -27,12 +27,11 @@ def login_required(f):
     from functools import wraps
     @wraps(f)
     def decorated(*args, **kwargs):
-        if "user_id" not in session:
-            return redirect(url_for("login"))
+        if "user_id" not in session: return redirect(url_for("login"))
         return f(*args, **kwargs)
     return decorated
 
-# ─────────────────────────── ROUTES ───────────────────────────
+# ─────────────────────────── MAIN ROUTES ───────────────────────────
 
 @app.route("/")
 def home():
@@ -45,11 +44,10 @@ def register():
         email = request.form.get("email")
         pwd = request.form.get("password")
         hashed = generate_password_hash(pwd)
-        conn = get_db_connection()
-        cur = conn.cursor()
+        conn = get_db(); cur = conn.cursor()
         try:
             cur.execute("INSERT INTO users (name, email, password) VALUES (%s, %s, %s)", (name, email, hashed))
-            flash("Registration Successful!")
+            flash("Registration successful!")
             return redirect(url_for("login"))
         except Exception as e:
             flash(f"Error: {e}")
@@ -62,7 +60,7 @@ def login():
     if request.method == "POST":
         email = request.form.get("email")
         pwd = request.form.get("password")
-        conn = get_db_connection(); cur = conn.cursor()
+        conn = get_db(); cur = conn.cursor()
         cur.execute("SELECT * FROM users WHERE email = %s", (email,))
         user = cur.fetchone()
         cur.close(); conn.close()
@@ -70,6 +68,7 @@ def login():
             session["user_id"] = user["user_id"]
             session["user_name"] = user["name"]
             return redirect(url_for("dashboard"))
+        flash("Invalid login")
     return render_template("login.html")
 
 @app.route("/logout")
@@ -77,13 +76,13 @@ def logout():
     session.clear()
     return redirect(url_for("home"))
 
-# ─────────────────────────── USER ACTIONS ───────────────────────────
+# ─────────────────────────── USER PAGES ───────────────────────────
 
 @app.route("/dashboard")
 @login_required
 def dashboard():
     uid = session["user_id"]
-    conn = get_db_connection(); cur = conn.cursor()
+    conn = get_db(); cur = conn.cursor()
     cur.execute("SELECT * FROM pickup_requests WHERE user_id = %s", (uid,))
     reqs = cur.fetchall()
     cur.close(); conn.close()
@@ -92,10 +91,6 @@ def dashboard():
 @app.route("/add_waste", methods=["GET", "POST"])
 @login_required
 def add_waste():
-    if request.method == "POST":
-        # Simplified logic to prevent errors
-        flash("Waste item added successfully!")
-        return redirect(url_for("dashboard"))
     return render_template("add_waste.html")
 
 @app.route("/request_pickup", methods=["GET", "POST"])
@@ -113,21 +108,26 @@ def admin_login():
         if u == "admin" and p == "admin123":
             session["admin_id"] = 1
             return redirect(url_for("admin_dashboard"))
+        flash("Invalid Admin Credentials")
     return render_template("admin_login.html")
 
 @app.route("/admin_dashboard")
 def admin_dashboard():
     if "admin_id" not in session: return redirect(url_for("admin_login"))
-    conn = get_db_connection(); cur = conn.cursor()
+    conn = get_db(); cur = conn.cursor()
     cur.execute("SELECT * FROM pickup_requests")
     reqs = cur.fetchall()
     cur.close(); conn.close()
-    return render_template("admin_dashboard.html", pending=reqs, completed=[], cancelled=[])
+    return render_template("admin_dashboard.html", pending=reqs, completed=[], cancelled=[], assigned=[], picked_up=[], recycling=[])
+
+@app.route("/admin_logout")
+def admin_logout():
+    session.clear()
+    return redirect(url_for("home"))
 
 @app.route("/reports")
 def reports():
-    # Adding this route so the navbar link works
-    return render_template("reports.html", total_users=0, total_items=0)
+    return render_template("reports.html", total_users=0, total_items=0, total_pending=0, total_completed=0, total_cancelled=0, category_stats=[], monthly=[])
 
 # ─────────────────────────── STARTUP ───────────────────────────
 
