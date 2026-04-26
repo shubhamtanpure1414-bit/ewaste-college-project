@@ -1,14 +1,23 @@
 import os
 from flask import (Flask, render_template, request, redirect,
-                   url_for, session, flash)
+                   url_for, session, flash, jsonify)
 from werkzeug.security import generate_password_hash, check_password_hash
 import mysql.connector
 from dotenv import load_dotenv
+
+from init_db import init_db
 
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "changeme_secret")
+
+# ── Initialise the database schema on startup ──────────────────────────
+try:
+    init_db()
+except Exception as _exc:  # noqa: BLE001
+    import sys
+    print(f"[app] WARNING: Database initialisation failed — {_exc}", file=sys.stderr)
 
 # ─────────────────────────── DB ───────────────────────────
 def get_db():
@@ -39,6 +48,17 @@ def admin_required(f):
             return redirect(url_for("admin_login"))
         return f(*args, **kwargs)
     return decorated
+
+# ─────────────────────────── HEALTH CHECK ───────────────────────────
+@app.route("/health")
+def health():
+    """Lightweight liveness probe used by Railway and other platforms."""
+    try:
+        db = get_db()
+        db.close()
+        return jsonify({"status": "ok", "database": "reachable"}), 200
+    except Exception as exc:  # noqa: BLE001
+        return jsonify({"status": "error", "detail": str(exc)}), 500
 
 # ─────────────────────────── HOME ───────────────────────────
 @app.route("/")
@@ -379,4 +399,5 @@ def reports():
 
 # ─────────────────────────── RUN ───────────────────────────
 if __name__ == "__main__":
-    app.run()
+    port = int(os.getenv("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
