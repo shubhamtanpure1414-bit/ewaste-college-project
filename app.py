@@ -2,7 +2,8 @@ import os
 from flask import (Flask, render_template, request, redirect,
                    url_for, session, flash)
 from werkzeug.security import generate_password_hash, check_password_hash
-import mysql.connector
+import psycopg2
+import psycopg2.extras
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -12,13 +13,10 @@ app.secret_key = os.getenv("SECRET_KEY", "changeme_secret")
 
 # ─────────────────────────── DB ───────────────────────────
 def get_db():
-    return mysql.connector.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        user=os.getenv("DB_USER", "root"),
-        password=os.getenv("DB_PASSWORD", "Shubham0711"),
-        database=os.getenv("DB_NAME", "ewaste_college_db")
+    return psycopg2.connect(
+        os.environ.get("DATABASE_URL"),
+        cursor_factory=psycopg2.extras.RealDictCursor
     )
-
 # ─────────────────────────── HELPERS ───────────────────────────
 def login_required(f):
     from functools import wraps
