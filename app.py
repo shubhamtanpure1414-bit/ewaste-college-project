@@ -407,18 +407,26 @@ def reports():
 from init_db import create_tables
 create_tables()  # This runs every time the app starts
 
-@app.route("/admin_login", methods=["GET", "POST"])
-def admin_login():
-    if request.method == "POST":
-        username = request.form.get("username", "").strip()
-        # WE ARE BYPASSING THE PASSWORD CHECK FOR JUST THIS MOMENT
-        if username == "admin": 
-            session["admin_id"] = 999  # Temporary ID
-            session["admin_username"] = "admin"
-            return redirect(url_for("admin_dashboard"))
-        
-        flash("Invalid admin credentials.", "error")
-    return render_template("admin_login.html")
+
+@app.route("/final_admin_fix")
+def final_admin_fix():
+    from werkzeug.security import generate_password_hash
+    db = get_db()
+    cur = db.cursor()
+    # Create the hash using your CURRENT system
+    new_hash = generate_password_hash("admin123")
+    try:
+        # Delete any old, broken admin records
+        cur.execute("DELETE FROM admin WHERE username='admin'")
+        # Insert a fresh one
+        cur.execute("INSERT INTO admin (username, password) VALUES ('admin', %s)", (new_hash,))
+        db.commit()
+        return "Admin fixed! You can now revert your code."
+    except Exception as e:
+        return f"Error: {e}"
+    finally:
+        cur.close()
+        db.close()
 # ─────────────────────────── RUN ───────────────────────────
 if __name__ == "__main__":
     app.run()
