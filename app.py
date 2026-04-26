@@ -10,15 +10,14 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "changeme_secret")
 
-# ─────────────────────────── DB ───────────────────────────
-def get_db():
+# ─────────────────────────── DB ───────────────────────────def get_db():
     return mysql.connector.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        user=os.getenv("DB_USER", "root"),
-        password=os.getenv("DB_PASSWORD", "Shubham0711"),
-        database=os.getenv("DB_NAME", "ewaste_college_db")
+        host=os.getenv("MYSQLHOST"),
+        user=os.getenv("MYSQLUSER"),
+        password=os.getenv("MYSQLPASSWORD"),
+        database=os.getenv("MYSQLDATABASE"),
+        port=int(os.getenv("MYSQLPORT", 3306))
     )
-
 # ─────────────────────────── HELPERS ───────────────────────────
 def login_required(f):
     from functools import wraps
