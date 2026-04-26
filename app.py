@@ -407,26 +407,18 @@ def reports():
 from init_db import create_tables
 create_tables()  # This runs every time the app starts
 
-# TEMPORARY ROUTE - DELETE AFTER USE
-@app.route("/setup_admin")
-def setup_admin():
-    from werkzeug.security import generate_password_hash
-    db = get_db()
-    cur = db.cursor()
-    # This creates a fresh hash using YOUR server's local library
-    new_hash = generate_password_hash("admin123")
-    try:
-        # This will update the existing admin or create it if missing
-        cur.execute("UPDATE admin SET password=%s WHERE username='admin'", (new_hash,))
-        if cur.rowcount == 0:
-            cur.execute("INSERT INTO admin (username, password) VALUES ('admin', %s)", (new_hash,))
-        db.commit()
-        return "Success! Admin 'admin' password is now 'admin123'. Go to /admin_login now."
-    except Exception as e:
-        return f"Error: {e}"
-    finally:
-        cur.close()
-        db.close()
+@app.route("/admin_login", methods=["GET", "POST"])
+def admin_login():
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        # WE ARE BYPASSING THE PASSWORD CHECK FOR JUST THIS MOMENT
+        if username == "admin": 
+            session["admin_id"] = 999  # Temporary ID
+            session["admin_username"] = "admin"
+            return redirect(url_for("admin_dashboard"))
+        
+        flash("Invalid admin credentials.", "error")
+    return render_template("admin_login.html")
 # ─────────────────────────── RUN ───────────────────────────
 if __name__ == "__main__":
     app.run()
