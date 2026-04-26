@@ -66,7 +66,7 @@ def register():
             return render_template("register.html")
 
         hashed = generate_password_hash(password)
-        db = get_db(); cur = db.cursor(dictionary=True)
+        db = get_db(); cur = db.cursor()
         try:
             cur.execute(
                 """INSERT INTO users
