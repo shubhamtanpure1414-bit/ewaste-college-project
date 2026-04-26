@@ -11,12 +11,13 @@ app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "changeme_secret")
 
 # ─────────────────────────── DB ───────────────────────────def get_db():
+   def get_db():
     return mysql.connector.connect(
         host=os.getenv("MYSQLHOST"),
         user=os.getenv("MYSQLUSER"),
         password=os.getenv("MYSQLPASSWORD"),
         database=os.getenv("MYSQLDATABASE"),
-        port=int(os.getenv("MYSQLPORT", 3306))
+        port=int(os.getenv("MYSQLPORT"))
     )
 # ─────────────────────────── HELPERS ───────────────────────────
 def login_required(f):
