@@ -401,6 +401,8 @@ def reports():
         total_cancelled=total_cancelled,
         category_stats=category_stats, monthly=monthly)
 
+from init_db import create_tables
+create_tables()  # This runs every time the app starts
 # ─────────────────────────── RUN ───────────────────────────
 if __name__ == "__main__":
     app.run()
