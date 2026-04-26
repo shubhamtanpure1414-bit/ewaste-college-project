@@ -17,6 +17,7 @@ def get_db():
         os.environ.get("DATABASE_URL"),
         cursor_factory=psycopg2.extras.RealDictCursor
     )
+
 # ─────────────────────────── HELPERS ───────────────────────────
 def login_required(f):
     from functools import wraps
@@ -66,21 +67,24 @@ def register():
             return render_template("register.html")
 
         hashed = generate_password_hash(password)
-        db = get_db(); cur = db.cursor()
+        db = get_db()
+        cur = db.cursor()
         try:
             cur.execute(
                 """INSERT INTO users
-                   (name,email,phone,department,class_year,roll_no,college_location,password)
-                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s)""",
+                   (name, email, phone, department, class_year, roll_no, college_location, password)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
                 (name, email, phone, dept, cls_year, roll_no, location, hashed)
             )
             db.commit()
             flash("Registration successful! Please login.", "success")
             return redirect(url_for("login"))
-       except psycopg2.IntegrityError:
+        except psycopg2.IntegrityError:
+            db.rollback()
             flash("Email already registered.", "error")
         finally:
-            cur.close(); db.close()
+            cur.close()
+            db.close()
 
     return render_template("register.html")
 
@@ -91,10 +95,12 @@ def login():
         email    = request.form.get("email", "").strip()
         password = request.form.get("password", "")
 
-        db = get_db(); cur = db.cursor()
+        db = get_db()
+        cur = db.cursor()
         cur.execute("SELECT * FROM users WHERE email=%s", (email,))
         user = cur.fetchone()
-        cur.close(); db.close()
+        cur.close()
+        db.close()
 
         if user and check_password_hash(user["password"], password):
             session["user_id"]   = user["user_id"]
@@ -114,9 +120,9 @@ def logout():
 @login_required
 def dashboard():
     uid = session["user_id"]
-    db = get_db(); cur = db.cursor()
+    db = get_db()
+    cur = db.cursor()
 
-    # Active = not Completed, not Cancelled
     cur.execute("""
         SELECT pr.request_id, e.item_name, e.category, e.quantity,
                pr.pickup_location, pr.pickup_date, pr.time_slot, pr.status
@@ -127,7 +133,6 @@ def dashboard():
     """, (uid,))
     active = cur.fetchall()
 
-    # Completed history
     cur.execute("""
         SELECT e.item_name, e.category, e.quantity,
                pr.pickup_date, pr.completed_at, pr.status
@@ -138,7 +143,8 @@ def dashboard():
     """, (uid,))
     history = cur.fetchall()
 
-    cur.close(); db.close()
+    cur.close()
+    db.close()
     return render_template("dashboard.html", active=active, history=history)
 
 # ─────────────────────────── ADD WASTE ───────────────────────────
@@ -158,14 +164,17 @@ def add_waste():
             flash("Item name, category and quantity are required.", "error")
             return render_template("add_waste.html")
 
-        db = get_db(); cur = db.cursor()
+        db = get_db()
+        cur = db.cursor()
         cur.execute(
             """INSERT INTO ewaste_items
-               (user_id,item_name,category,quantity,waste_condition,approx_weight,description)
-               VALUES (%s,%s,%s,%s,%s,%s,%s)""",
+               (user_id, item_name, category, quantity, waste_condition, approx_weight, description)
+               VALUES (%s, %s, %s, %s, %s, %s, %s)""",
             (uid, item_name, category, quantity, condition, weight, description)
         )
-        db.commit(); cur.close(); db.close()
+        db.commit()
+        cur.close()
+        db.close()
         flash("E-Waste item added successfully!", "success")
         return redirect(url_for("dashboard"))
 
@@ -176,7 +185,8 @@ def add_waste():
 @login_required
 def request_pickup():
     uid = session["user_id"]
-    db = get_db(); cur = db.cursor(dictionary=True)
+    db = get_db()
+    cur = db.cursor()
 
     if request.method == "POST":
         waste_id  = request.form.get("waste_id")
@@ -190,12 +200,13 @@ def request_pickup():
         else:
             cur.execute(
                 """INSERT INTO pickup_requests
-                   (user_id,waste_id,pickup_location,pickup_date,time_slot,note)
-                   VALUES (%s,%s,%s,%s,%s,%s)""",
+                   (user_id, waste_id, pickup_location, pickup_date, time_slot, note)
+                   VALUES (%s, %s, %s, %s, %s, %s)""",
                 (uid, waste_id, location, date, time_slot, note)
             )
             db.commit()
-            cur.close(); db.close()
+            cur.close()
+            db.close()
             flash("Your pickup request has been sent to admin.", "success")
             return redirect(url_for("dashboard"))
 
@@ -204,7 +215,8 @@ def request_pickup():
         (uid,)
     )
     items = cur.fetchall()
-    cur.close(); db.close()
+    cur.close()
+    db.close()
     return render_template("request_pickup.html", items=items)
 
 # ─────────────────────────── CANCEL REQUEST ───────────────────────────
@@ -212,7 +224,8 @@ def request_pickup():
 @login_required
 def cancel_request(request_id):
     uid = session["user_id"]
-    db = get_db(); cur = db.cursor(dictionary=True)
+    db = get_db()
+    cur = db.cursor()
     cur.execute("SELECT * FROM pickup_requests WHERE request_id=%s AND user_id=%s",
                 (request_id, uid))
     req = cur.fetchone()
@@ -225,7 +238,8 @@ def cancel_request(request_id):
         flash("Request cancelled successfully.", "success")
     else:
         flash("Only pending requests can be cancelled.", "error")
-    cur.close(); db.close()
+    cur.close()
+    db.close()
     return redirect(url_for("dashboard"))
 
 # ─────────────────────────── ADMIN LOGIN ───────────────────────────
@@ -235,10 +249,12 @@ def admin_login():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
 
-        db = get_db(); cur = db.cursor(dictionary=True)
+        db = get_db()
+        cur = db.cursor()
         cur.execute("SELECT * FROM admin WHERE username=%s", (username,))
         admin = cur.fetchone()
-        cur.close(); db.close()
+        cur.close()
+        db.close()
 
         if admin and check_password_hash(admin["password"], password):
             session["admin_id"]       = admin["admin_id"]
@@ -257,7 +273,8 @@ def admin_logout():
 @app.route("/admin_dashboard")
 @admin_required
 def admin_dashboard():
-    db = get_db(); cur = db.cursor(dictionary=True)
+    db = get_db()
+    cur = db.cursor()
 
     base_q = """
         SELECT pr.*, u.name, u.email, u.phone, u.department, u.roll_no,
@@ -281,7 +298,8 @@ def admin_dashboard():
     completed  = fetch("Completed")
     cancelled  = fetch("Cancelled")
 
-    cur.close(); db.close()
+    cur.close()
+    db.close()
     return render_template("admin_dashboard.html",
         pending=pending, assigned=assigned, picked_up=picked_up,
         recycling=recycling, completed=completed, cancelled=cancelled)
@@ -291,7 +309,8 @@ def admin_dashboard():
 @admin_required
 def update_status(request_id):
     status = request.form.get("status")
-    db = get_db(); cur = db.cursor()
+    db = get_db()
+    cur = db.cursor()
 
     if status == "Completed":
         cur.execute(
@@ -309,7 +328,9 @@ def update_status(request_id):
             (status, request_id)
         )
 
-    db.commit(); cur.close(); db.close()
+    db.commit()
+    cur.close()
+    db.close()
     flash(f"Request #{request_id} updated to '{status}'.", "success")
     return redirect(url_for("admin_dashboard"))
 
@@ -324,7 +345,8 @@ def assign_collector(request_id):
         flash("Collector name is required.", "error")
         return redirect(url_for("admin_dashboard"))
 
-    db = get_db(); cur = db.cursor()
+    db = get_db()
+    cur = db.cursor()
     cur.execute(
         """UPDATE pickup_requests
            SET collector_name=%s, collector_phone=%s,
@@ -332,7 +354,9 @@ def assign_collector(request_id):
            WHERE request_id=%s""",
         (name, phone, request_id)
     )
-    db.commit(); cur.close(); db.close()
+    db.commit()
+    cur.close()
+    db.close()
     flash(f"Collector assigned to Request #{request_id}.", "success")
     return redirect(url_for("admin_dashboard"))
 
@@ -340,7 +364,8 @@ def assign_collector(request_id):
 @app.route("/reports")
 @admin_required
 def reports():
-    db = get_db(); cur = db.cursor(dictionary=True)
+    db = get_db()
+    cur = db.cursor()
 
     def scalar(q, params=()):
         cur.execute(q, params)
@@ -360,7 +385,7 @@ def reports():
     category_stats = cur.fetchall()
 
     cur.execute("""
-        SELECT DATE_FORMAT(completed_at,'%Y-%m') as month,
+        SELECT TO_CHAR(completed_at, 'YYYY-MM') as month,
                COUNT(*) as count
         FROM pickup_requests
         WHERE status='Completed' AND completed_at IS NOT NULL
@@ -368,7 +393,8 @@ def reports():
     """)
     monthly = cur.fetchall()
 
-    cur.close(); db.close()
+    cur.close()
+    db.close()
     return render_template("reports.html",
         total_users=total_users, total_items=total_items,
         total_pending=total_pending, total_completed=total_completed,
