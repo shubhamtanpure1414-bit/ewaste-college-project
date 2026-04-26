@@ -1,4 +1,5 @@
 import os
+import sys
 from flask import (Flask, render_template, request, redirect,
                    url_for, session, flash)
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -7,8 +8,30 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# ─────────────────────────── STARTUP LOGGING ───────────────────────────
+print("[app] Starting ewaste-app…", file=sys.stderr)
+print(f"[app] MYSQLHOST:     {os.getenv('MYSQLHOST') or os.getenv('MYSQL_HOST')}", file=sys.stderr)
+print(f"[app] MYSQLPORT:     {os.getenv('MYSQLPORT') or os.getenv('MYSQL_PORT') or '3306'}", file=sys.stderr)
+print(f"[app] MYSQLUSER:     {os.getenv('MYSQLUSER') or os.getenv('MYSQL_USER')}", file=sys.stderr)
+print(f"[app] MYSQLDATABASE: {os.getenv('MYSQLDATABASE') or os.getenv('MYSQL_DATABASE')}", file=sys.stderr)
+print(f"[app] MYSQLPASSWORD: {'<set>' if (os.getenv('MYSQLPASSWORD') or os.getenv('MYSQL_PASSWORD')) else '<NOT SET>'}",
+      file=sys.stderr)
+
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "changeme_secret")
+
+# ─────────────────────────── DB INIT ───────────────────────────
+try:
+    from init_db import init_db
+    print("[app] Running database initialisation…", file=sys.stderr)
+    if init_db():
+        print("[app] Database initialisation succeeded.", file=sys.stderr)
+    else:
+        print("[app] WARNING: Database initialisation failed — app will still start "
+              "but DB-dependent routes may not work.", file=sys.stderr)
+except Exception as _init_exc:
+    print(f"[app] WARNING: Unexpected error during database initialisation: {_init_exc}",
+          file=sys.stderr)
 
 # ─────────────────────────── DB ───────────────────────────
 def get_db():
@@ -39,6 +62,12 @@ def admin_required(f):
             return redirect(url_for("admin_login"))
         return f(*args, **kwargs)
     return decorated
+
+# ─────────────────────────── HEALTH CHECK ───────────────────────────
+@app.route("/health")
+def health():
+    """Lightweight liveness probe — no DB required."""
+    return "OK", 200
 
 # ─────────────────────────── HOME ───────────────────────────
 @app.route("/")
@@ -379,4 +408,6 @@ def reports():
 
 # ─────────────────────────── RUN ───────────────────────────
 if __name__ == "__main__":
-    app.run()
+    port = int(os.getenv("PORT", 5000))
+    print(f"[app] Flask development server listening on port {port}", file=sys.stderr)
+    app.run(host="0.0.0.0", port=port)
